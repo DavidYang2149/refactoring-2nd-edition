@@ -1,4 +1,11 @@
 // As-Is
+function parsePTag(md) {
+  md = md = md.replace(/^\s*(\n)?(.+)/gm, function (m) {
+    return /\<(\/)?(h\d|ul|ol|li|blockquote|pre|img)/.test(m) ? m : '<p>' + m + '</p>';
+  });
+  return md;
+}
+
 function parseHTag(md) {
   md = md.replace(/[#]{6}(.+)/g, '<h6>$1</h6>');
   md = md.replace(/[#]{5}(.+)/g, '<h5>$1</h5>');
