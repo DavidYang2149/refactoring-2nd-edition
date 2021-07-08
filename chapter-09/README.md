@@ -107,18 +107,67 @@ class organization {
 }
 ```
 
-### 9.3 파생 변수를 질의 함수로 바꾸기 (341)
+### 9.3 파생 변수를 질의 함수로 바꾸기 (338)
 
+```js
+// As-Is
+get production() { return this._production; }
+applyAdjustment(anAdjustment) {
+  this._adjustment.push(anAdjustmemt);
+  this._production += anAdjustment.amount;
+}
 
+// To-Be
+get production() { return this._adjustments.reduce((sum, a) => sum + a.amount, 0); }
+applyAdjustment(anAdjustment) {
+  this._adjustment.push(anAdjustmemt);
+}
+```
 
 ### 9.4 참조를 값으로 바꾸기
 
+객체(데이터 구조)를 다른 객체(데이터 구조)에 중첩하면 내부 객체를 참조 혹은 값으로 취급할 수 있다.
 
+```js
+// As-Is
+class Product {
+  applyDiscount(arg) { this._price.amount -= arg; }
+}
+
+// To-Be
+class Product {
+  applyDiscount(arg) {
+    this._price = new Money(this._price.amount - arg, this._price.currency);
+  }
+}
+```
 
 ### 9.5 값을 참조로 바꾸기
 
+하나의 값을 여러 곳에서 사용한다면 참조로 바꾼다.
 
+```js
+// As-Is
+let customer = new Customer(customerData);
+
+// To-Be
+let customer = customerRepository.get(customerData.id);
+```
 
 ### 9.6 매직 리터럴 바꾸기
 
+일반적인 리터럴 값에 의미가 있는 경우 변수명을 지어 의미를 쉽게 이해하도록 돕기.
 
+```js
+// As-Is
+function potentialEnergy(mass, height) {
+  return mass * 9.81 * height;
+}
+
+// To-Be
+const STANDART_GRAVITY = 9.81;
+function potentialEnergy(mass, height) {
+  return mass * STANDART_GRAVITY * height;
+}
+
+```
