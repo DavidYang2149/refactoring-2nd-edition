@@ -226,7 +226,252 @@ function discountedPrice(basePrice) {
 
 ### 11.6 질의 함수를 매개변수로 바꾸기 (437P)
 
+- 질의 함수의 의존성을 제거하기
 
+```js
+// As-Is
+get targetTemperature() {
+  if (thermostat.selectedTemperature > this._max) return this._max;
+  else if (thermostat.selectedTemperature < this._min) return this._min;
+  else return thermostat.selectedTemperature;
+}
+
+if (thePlan.targetTemperature > thermostat.currentTemperature) setToHeat();
+else if (thePlan.targetTemperature < thermostat.currentTemperature) setToCool();
+else setOff();
+
+// To-Be - 1단계
+get targetTemperature() {
+  const selectedTemperature = thermostat.selectedTemperature;
+  if (selectedTemperature > this._max) return this._max;
+  else if (selectedTemperature < this._min) return this._min;
+  else return selectedTemperature;
+}
+
+// To-Be - 2단계
+get targetTemperature() {
+  const selectedTemperature = thermostat.selectedTemperature;
+  return this.xxxNewTargetTemperature(selectedTemperature);
+}
+
+xxxNewTargetTemperature(selectedTemperature) {
+  if (selectedTemperature > this._max) return this._max;
+  else if (selectedTemperature < this._min) return this._min;
+  else return selectedTemperature;
+}
+
+// To-Be - 3단계
+if (thePlan.xxxNewTargetTemperature(thermostat.selectedTemperature) > thermostat.currentTemperature) setToHeat();
+else if (thePlan.xxxNewTargetTemperature(thermostat.selectedTemperature) < thermostat.currentTemperature) setToCool();
+else setOff();
+
+// To-Be - 4단계
+targetTemperature(selectedTemperature) {
+  if (selectedTemperature > this._max) return this._max;
+  else if (selectedTemperature < this._min) return this._min;
+  else return selectedTemperature;
+}
+
+if (thePlan.targetTemperature(thermostat.selectedTemperature) > thermostat.currentTemperature) setToHeat();
+else if (thePlan.targetTemperature(thermostat.selectedTemperature) < thermostat.currentTemperature) setToCool();
+else setOff();
+```
+
+### 11.7 세터 제거하기
+
+- 세터 메서드가 존재하면 값이 변할 수 있기 때문에 세터를 제거함으로 수정하지 않겠다는 의도를 만든다
+
+```js
+// As-Is
+class Person {
+  get name() { return this._name; }
+  set name(arg) { this._name = arg; }
+  get id() { return this._id; }
+  set id(arg) { this._id = arg; }
+}
+
+const david = new Person();
+david.name = '데이빗';
+david.id = 'david2';
+
+// To-Be
+class Person {
+  constructor(id) {
+    this.id = id;
+  }
+
+  get name() { return this._name; }
+  set name(arg) { this._name = arg; }
+  get id() { return this._id; }
+}
+
+const david = new Person('david2');
+david.name = '데이빗';
+```
+
+### 11.8 생성자를 팩터리 함수로 바꾸기
+
+- 생성자에 붙는 제약을 제거하기 위해 팩터리 함수를 사용함
+
+```js
+// As-Is
+class Employee {
+  constructor(name, typeCode) {
+    this._name = name;
+    this._typeCode = typeCode;
+  }
+
+  get name() { return this._name };
+  get type() {
+    return Employee.legalTypeCodes[this._typeCode];
+  }
+  static get legalTypeCodes() {
+    return { 'E': 'engineer', 'M': 'Manager', 'S': 'Salesperson' };
+  }
+}
+
+candidate = new Employee(document.name, document.empType);
+
+// To-Be - 1단계
+function createEmployee(name, typeCode) {
+  return new Employee(name, typeCode);
+}
+
+candidate = createEmployee(document.name, document.empType);
+
+const leadEngineer = createEmployee(document.name, 'E');
+
+// To-Be - 2단계
+function createEngineer(name) {
+  return new Employee(name, 'E');
+}
+
+const leadEngineer = createEngineer(document.name);
+```
+
+### 11.9 함수를 명령으로 바꾸기
+
+- 함수를 객체 안으로 캡슐화하면 더 유용한 경우가 존재함
+
+```js
+// As-Is
+function score(candidate, medicalExam, scoringGuide) {
+  let result = 0;
+  let healthLevel = 0;
+  let highMedicalRiskFlag = false;
+
+  if (medicalExam.isSmoker) {
+    healthLevel += 10;
+    highMedicalRiskFlag = true;
+  }
+
+  let certificationGrade = 'regular';
+  if (scoringGuide.stateWithLowCertification(candidate.originState)) {
+    certificationGrade = 'low';
+    result -= 5;
+  }
+
+  // do something...
+  result -= Math.max(healthLevel - 5, 0);
+  return result;
+}
+
+// To-Be - 1단계
+function score(candidate, medicalExam, scoringGuide) {
+  return new Scorer().execute(candidate, medicalExam, scoringGuide);
+}
+
+class Scorer {
+  execute(candidate, medicalExam, scoringGuide) {
+    let result = 0;
+    let healthLevel = 0;
+    let highMedicalRiskFlag = false;
+
+    if (medicalExam.isSmoker) {
+      healthLevel += 10;
+      highMedicalRiskFlag = true;
+    }
+
+    let certificationGrade = 'regular';
+    if (scoringGuide.stateWithLowCertification(candidate.originState)) {
+      certificationGrade = 'low';
+      result -= 5;
+    }
+
+    // do something...
+    result -= Math.max(healthLevel - 5, 0);
+    return result;
+  }
+}
+
+// To-Be - 2단계
+function score(candidate, medicalExam, scoringGuide) {
+  return new Scorer(candidate).execute(medicalExam, scoringGuide);
+}
+
+class Scorer {
+  constructor(candidate) {
+    this._candidate = candidate;
+  }
+
+  execute(medicalExam, scoringGuide) {
+    let result = 0;
+    let healthLevel = 0;
+    let highMedicalRiskFlag = false;
+
+    if (medicalExam.isSmoker) {
+      healthLevel += 10;
+      highMedicalRiskFlag = true;
+    }
+
+    let certificationGrade = 'regular';
+    if (scoringGuide.stateWithLowCertification(this._candidate.originState)) {
+      certificationGrade = 'low';
+      result -= 5;
+    }
+
+    // do something...
+    result -= Math.max(healthLevel - 5, 0);
+    return result;
+  }
+}
+
+// To-Be - 3단계
+function score(candidate, medicalExam, scoringGuide) {
+  return new Scorer(candidate, medicalExam, scoringGuide).execute();
+}
+
+class Scorer {
+  constructor(candidate, medicalExam, scoringGuide) {
+    this._candidate = candidate;
+    this._medicalExam = medicalExam;
+    this._scoringGuide = scoringGuide;
+  }
+
+  execute() {
+    let result = 0;
+    let healthLevel = 0;
+    let highMedicalRiskFlag = false;
+
+    if (this._medicalExam.isSmoker) {
+      healthLevel += 10;
+      highMedicalRiskFlag = true;
+    }
+
+    let certificationGrade = 'regular';
+    if (this._scoringGuide.stateWithLowCertification(this._candidate.originState)) {
+      certificationGrade = 'low';
+      result -= 5;
+    }
+
+    // do something...
+    result -= Math.max(healthLevel - 5, 0);
+    return result;
+  }
+}
+```
+
+### 11.10 명령을 함수로 바꾸기 (456P)
 
 
 ```js
@@ -236,22 +481,6 @@ function discountedPrice(basePrice) {
 // To-Be
 
 ```
-
-### 11.7 세터 제거하기
-
-
-
-### 11.8 생성자를 팩터리 함수로 바꾸기
-
-
-
-### 11.9 함수를 명령으로 바꾸기
-
-
-
-### 11.10 명령을 함수로 바꾸기
-
-
 
 ### 11.11 수정된 값 반환하기
 
