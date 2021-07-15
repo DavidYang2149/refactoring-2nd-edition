@@ -473,24 +473,224 @@ class Scorer {
 
 ### 11.10 명령을 함수로 바꾸기 (456P)
 
+- 객체지향 내에서 명령코드를 함수로 변환
 
 ```js
 // As-Is
+class ChargeCalculator {
+  constructor(customer, usage, provider) {
+    this._customer = customer;
+    this._usage = usage;
+    this._provider = provider;
+  }
 
+  get baseCharge() {
+    return this._sutomer.baseRate * this._usage;
+  }
 
-// To-Be
+  get charge() {
+    return this.baseCharge + this._provider.connectionCharge;
+  }
+}
 
+monthCharge = new ChargeCalculator(customer, usage, provider).charge;
+
+// To-Be - 1단계
+monthCharge = new ChargeCalculator(customer, usage, provider);
+
+function charge(customer, usage, provider) {
+  return new ChargeCalculator(customer, usage, provider).charge;
+}
+
+// To-Be - 2단계
+get baseCharge() {
+  return this._customer.baseRate + this._usage;
+}
+
+get charge() {
+  const baseCharge = this.baseCharge;
+  return baseCharge + this._provider.connectionCharge;
+}
+
+// To-Be - 3단계
+get charge() {
+  const baseCharge = this._customer.baseRate + this._usage;
+  return baseCharge + this._provider.connectionCharge;
+}
+
+// To-Be - 4단계
+get baseCharge() {
+  return this._customer.baseRate + this._usage;
+}
+
+get charge() {
+  const baseCharge = this.baseCharge;
+  return baseCharge + this._provider.connectionCharge;
+}
+
+// To-Be - 5단계
+constructor(customer, usage provider) {
+  this._customer = customer;
+  this._usage = usage;
+  this._provider = provider;
+}
+
+charge(customer, usage, provider) {
+  const baseCharge = this._cusomer.baseRate * this._usage;
+  return baseCharge + this._provider.connectionCharge;
+}
+
+function charge(customer, usage, provider) {
+  return new ChargeCalculator(customer, usage, provider).charge(customer, usage, provider);
+}
+
+// To-Be - 6단계
+constructor(customer, usage, provider) {
+  this._usage = usage;
+  this._provider = provider;
+}
+
+charge(customer, usage, provider) {
+  const baseCharge = custmoer.baseRate * this._usage;
+  return baseCharge + this._provider.connectionCharge;
+}
+
+// To-Be - 7단계
+charge(customer, usage, provider) {
+  const baseCharge = customer.baseRate * usage;
+  return baseCharge + provider.connectionCharge;
+}
+
+function charge(customer, usage, provider) {
+  const baseCharge = customer.baseRate * usage;
+  return baseCharge + provider.connectionCharge;
+}
 ```
 
 ### 11.11 수정된 값 반환하기
 
+- 데이터가 수정될 때 수정된 값을 반환함으로 분명한 목적이 있음을 드러냄
 
+```js
+// As-Is
+let totalAscent = 0;
+let totalTime = 0;
+let totalDistance = 0;
+calculateAscent();
+calculateTime();
+calculateDistance();
+const pace = totalTime / 60 / totalDistance;
+
+function calculateAscent() {
+  for (let i = 1; i < points.length; i++) {
+    const verticalChange = points[i].elevation - points[i - 1].elevation;
+    totalAscent += (verticalChange > 0) ? verticalChnage : 0;
+  }
+}
+
+// To-Be - 1단계
+let totalAscent = 0;
+let totalTime = 0;
+let totalDistance = 0;
+totalAscent = calculateAscent();
+calculateTime();
+calculateDistance();
+const pace = totalTime / 60 / totalDistance;
+
+function calculateAscent() {
+  for (let i = 1; i < points.length; i++) {
+    const verticalChange = points[i].elevation - points[i - 1].elevation;
+    totalAscent += (verticalChange > 0) ? verticalChnage : 0;
+  }
+  return totalAscent;
+}
+
+// To-Be - 2단계
+function calculateAscent() {
+  let totalAscent = 0;
+  for (let i = 1; i < points.length; i++) {
+    const verticalChange = points[i].elevation - points[i - 1].elevation;
+    totalAscent += (verticalChange > 0) ? verticalChnage : 0;
+  }
+  return totalAscent;
+}
+
+// To-Be - 3단계
+function calculateAscent() {
+  let result = 0;
+  for (let i = 1; i < points.length; i++) {
+    const verticalChange = points[i].elevation - points[i - 1].elevation;
+    result += (verticalChange > 0) ? verticalChnage : 0;
+  }
+  return result;
+}
+
+// To-Be - 4단계
+const totalAscent = calculateAscent();
+let totalTime = 0;
+let totalDistance = 0;
+calculateTime();
+calculateDistance();
+const pace = totalTime / 60 / totalDistance;
+
+// To-Be - 5단계(다른 함수들도 같은 방식으로 처리)
+const totalAscent = calculateAscent();
+let totalTime = calculateTime();
+let totalDistance = calculateDistance();
+
+const pace = totalTime / 60 / totalDistance;
+```
 
 ### 11.12 오류 코드를 예외로 바꾸기
 
+- 오류 코드를 예외(Exception)로 처리하기
+- 주의: 예외를 던지는 코드를 프로그램 종료 코드로 바꿔도 프로그램이 정상 동작할지를 따저보아야 함
 
+```js
+// As-Is
+function localShipppingRules(country) {
+  const data = countryData.shippingRules[country];
+  if (data) return new ShippingRules(data);
+  else return -2;
+}
+
+function calculateShippingCosts(anOrder) {
+  // do something...
+  const shippingRules = localShippingRules(anOrder.country);
+  if (shippingRules < 0) return shippingRules;  // 오류 전파
+  // do something...
+}
+
+const status = calculateShippingCosts(orderData);
+if (status < 0) errorList.push({ order: orderData, errorCode: status });
+
+// To-Be - 1단계
+let status;
+status = calculateShippingCosts(orderData);
+if (status < 0) errorList.push({ order: orderData, errorCode: status });
+
+
+// To-Be - 2단계
+let status;
+try {
+  status = calculateShippingCosts(orderData);
+} catch (e) {
+  throw e;
+}
+if (status < 0) errorList.push({ order: orderData, errorCode: status });
+
+// To-Be - 3단계
+try {
+  calculateShippingCosts(orderData);
+} catch (e) {
+  if (e instanceof OrderProcessingError)
+    errorList.push({ order: orderData, errorCode: status });
+  else
+    throw e;
+}
+
+```
 
 ### 11.13 예외를 사전확인으로 바꾸기
 
-
-
+- 예외를 던지기 전 호출하는 곳에서 조건을 검사하도록 수정
